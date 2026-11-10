@@ -66,6 +66,7 @@ document.querySelectorAll('[data-category]').forEach(button=>button.addEventList
  document.querySelectorAll('[data-category]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
  document.querySelector('#animation-work').hidden=category!=='animation';
  document.querySelector('#prototype-work').hidden=category!=='prototype';
+ document.querySelector('#lumen-work').hidden=category!=='prototype';
  document.querySelector('#category-empty').hidden=category==='animation'||category==='prototype';
  document.querySelector('#category-message').textContent=categoryNames[category]+'作品待加入。';
 }));
