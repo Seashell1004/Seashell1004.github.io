@@ -109,7 +109,7 @@ for(const body of document.querySelectorAll('.image-body')){
  body.querySelector('.logo-size').oninput=e=>{logoSettings.size=Number(e.target.value);applyLogo();persistLogo()};
  body.querySelector('.logo-fit').onchange=e=>{logoSettings.fit=e.target.value;applyLogo();persistLogo()};
  body.querySelector('.logo-upload').onchange=e=>{const file=e.target.files[0];if(!file)return;if(!file.type.startsWith('image/')){body.querySelector('.logo-status').textContent='请选择图片文件。';return}if(file.size>4*1024*1024){body.querySelector('.logo-status').textContent='请使用小于 4 MB 的图片。';return}const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{logoSettings.src=reader.result;applyLogo();persistLogo()};img.onerror=()=>body.querySelector('.logo-status').textContent='无法读取图片，请换一个文件。';img.src=reader.result};reader.readAsDataURL(file)};
- body.querySelector('.logo-reset').onclick=()=>{logoSettings={size:64,fit:'contain',src:'logo-default.svg'};applyLogo();persistLogo();document.querySelectorAll('.logo-upload').forEach(e=>e.value='')};
+ body.querySelector('.logo-reset').onclick=()=>{logoSettings={...logoDefaults};applyLogo();persistLogo();document.querySelectorAll('.logo-upload').forEach(e=>e.value='')};
 }applyLogo();
 
 const settingsPanels=[...document.querySelectorAll('.frame-panel,.image-panel,.text-panel,#visual,#work-visual,.controls details,#theme-menu')];
@@ -190,3 +190,20 @@ function applyCursor(){
 for(const key of ['size','width','opacity','glow','hLength','vLength','hWidth','vWidth','gap']){const control=key.replace(/[A-Z]/g,c=>'-'+c.toLowerCase());document.querySelectorAll('.crt-cursor-'+control).forEach(e=>e.oninput=()=>{cursorSettings[key]=Number(e.value);applyCursor()})}applyCursor();
 
 document.querySelectorAll('[data-theme-choice]').forEach(button=>button.onclick=()=>{setTheme(button.dataset.themeChoice);document.querySelector('#theme-menu').open=false;document.querySelector('#theme-menu summary').focus()});
+
+document.querySelector('#play-emoji').onclick=()=>{document.querySelector('#play-emoji').hidden=true;document.querySelector('#emoji-player').hidden=false;const iframe=document.querySelector('#emoji-player iframe');iframe.src=iframe.src.replace('autoplay=0','autoplay=1')};
+
+const coverFilterDefaults={brightness:100,contrast:100,saturation:100,grayscale:0,blur:0,themeStrength:100};
+let coverFilters={...coverFilterDefaults};try{const saved=JSON.parse(localStorage.getItem('honda-cover-filters')||'{}');for(const key of Object.keys(coverFilterDefaults))if(Number.isFinite(saved[key]))coverFilters[key]=saved[key]}catch{}
+function applyCoverFilters(){for(const key of Object.keys(coverFilterDefaults)){const unit=key==='blur'?'px':'%';document.documentElement.style.setProperty('--cover-'+key,coverFilters[key]+unit);document.querySelectorAll('[data-cover-filter="'+key+'"]').forEach(e=>e.value=coverFilters[key]);document.querySelectorAll('.cover-filter-'+key+'-value').forEach(e=>e.value=coverFilters[key]+unit)}try{localStorage.setItem('honda-cover-filters',JSON.stringify(coverFilters))}catch{}}
+document.querySelectorAll('[data-cover-filter]').forEach(input=>input.oninput=()=>{coverFilters[input.dataset.coverFilter]=Number(input.value);applyCoverFilters()});document.querySelectorAll('.cover-filter-reset').forEach(button=>button.onclick=()=>{coverFilters={...coverFilterDefaults};applyCoverFilters()});applyCoverFilters();
+
+let coverThemeEnabled=true;try{coverThemeEnabled=localStorage.getItem('honda-cover-theme-enabled')!=='false'}catch{}
+function applyCoverTheme(){document.documentElement.classList.toggle('cover-theme-on',coverThemeEnabled);document.documentElement.style.setProperty('--cover-theme-strength',(coverFilters.themeStrength??100)/100);document.querySelectorAll('.cover-theme-enabled').forEach(e=>e.checked=coverThemeEnabled);document.querySelectorAll('.cover-theme-strength').forEach(e=>e.value=coverFilters.themeStrength??100);document.querySelectorAll('.cover-theme-strength-value').forEach(e=>e.value=(coverFilters.themeStrength??100)+'%');try{localStorage.setItem('honda-cover-theme-enabled',String(coverThemeEnabled))}catch{}}
+document.querySelectorAll('.cover-theme-enabled').forEach(e=>e.onchange=()=>{coverThemeEnabled=e.checked;applyCoverTheme()});document.querySelectorAll('.cover-theme-strength').forEach(e=>e.oninput=()=>{coverFilters.themeStrength=Number(e.value);applyCoverFilters();applyCoverTheme()});
+for(const card of document.querySelectorAll('.project-art')){const image=card.querySelector('img');if(!image)continue;const themeImage=image.cloneNode();themeImage.className='cover-theme-image';themeImage.alt='';themeImage.setAttribute('aria-hidden','true');image.after(themeImage)}
+document.querySelectorAll('.cover-filter-reset').forEach(e=>e.addEventListener('click',()=>{coverThemeEnabled=true;applyCoverTheme()}));applyCoverTheme();
+
+document.querySelector('#close-emoji').onclick=()=>{const player=document.querySelector('#emoji-player');const iframe=player.querySelector('iframe');iframe.src=iframe.src.replace('autoplay=1','autoplay=0');player.hidden=true;document.querySelector('#play-emoji').hidden=false;document.querySelector('#play-emoji').focus()};
+
+const logoImage=document.querySelector('#brand-logo');logoImage.addEventListener('error',()=>{if(logoSettings.src!==logoDefaults.src){logoSettings={...logoDefaults};applyLogo();persistLogo()}});
